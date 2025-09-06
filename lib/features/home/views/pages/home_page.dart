@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/cubits/home_cubit.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/pages/result_page.dart';
+import 'package:smart_trip_planner_flutter/features/profile/views/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,6 +26,10 @@ class _HomePageState extends State<HomePage> {
         listener: (context, state) {},
         builder: (context, state) => Scaffold(
           appBar: AppBar(
+            systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.light,
+              statusBarColor: Colors.transparent,
+            ),
             actionsPadding: EdgeInsets.only(right: 20),
             actions: [
               profileIcon(),
@@ -72,8 +78,7 @@ class _HomePageState extends State<HomePage> {
 
                     state is HomeLoading
                         ? CircularProgressIndicator()
-                        : Container(
-                            height: 200,
+                        : SizedBox(
                             child: ListView.builder(
                               physics: ScrollPhysics(),
                               shrinkWrap: true,
@@ -88,6 +93,8 @@ class _HomePageState extends State<HomePage> {
                                             ResultPage(trip: state.history[index]),
                                       ),
                                     );
+
+                                    controller.clear();
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.symmetric(vertical: 5),
@@ -129,18 +136,27 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Container profileIcon() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: CustomTheme.primary,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Center(
-        child: Text(
-          "P",
-          style: TextStyle(color: Colors.white, fontSize: 16),
+  Widget profileIcon() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProfilePage(),
+          ),
+        );
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: CustomTheme.primary,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Center(
+          child: Text(
+            "P",
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
         ),
       ),
     );
@@ -160,6 +176,7 @@ class _HomePageState extends State<HomePage> {
           ),
         );
 
+        controller.clear();
         homeCubit.reloadData();
       },
       child: Container(

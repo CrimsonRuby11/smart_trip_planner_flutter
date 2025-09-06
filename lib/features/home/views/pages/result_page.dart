@@ -1,5 +1,6 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
@@ -32,6 +33,10 @@ class _ResultPageState extends State<ResultPage> {
         builder: (context, state) => SafeArea(
           child: Scaffold(
             appBar: AppBar(
+              systemOverlayStyle: const SystemUiOverlayStyle(
+                statusBarBrightness: Brightness.light,
+                statusBarColor: Colors.transparent,
+              ),
               title: Text(
                 "Home",
                 style: TextStyle(fontSize: 18),
@@ -81,21 +86,36 @@ class _ResultPageState extends State<ResultPage> {
                           ],
                         ),
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Expanded(child: resultContent(state)),
-                            Container(
-                              margin: const EdgeInsets.all(20),
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: const Color.fromARGB(98, 158, 158, 158),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Row(
-                                children: [
-                                  mapsButton(state, context),
-                                ],
-                              ),
-                            ),
+                            state is ResultLoaded
+                                ? Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 20,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 15,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color.fromARGB(98, 158, 158, 158),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        mapsButton(state, context),
+                                        Expanded(
+                                          child: Text(
+                                            " : ${state.trip!.title}",
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : Container(),
                           ],
                         ),
                       ),
@@ -103,12 +123,16 @@ class _ResultPageState extends State<ResultPage> {
 
                     SizedBox(height: 30),
 
-                    followUpButton(state, state.trip!, widget.prompt),
+                    followUpButton(state, widget.prompt),
 
                     SizedBox(height: 20),
 
                     state is ResultLoaded
-                        ? saveOfflineButton(context.read<ResultCubit>(), state.trip!)
+                        ? saveOfflineButton(
+                            context.read<ResultCubit>(),
+                            state.readOnly,
+                            state.trip!,
+                          )
                         : Container(),
                   ],
                 ),
@@ -166,6 +190,7 @@ class _ResultPageState extends State<ResultPage> {
                 CircularProgressIndicator(),
                 SizedBox(height: 20),
                 Text("Curating a perfect plan for you..."),
+                SizedBox(height: 40),
               ],
             ),
           )
@@ -174,62 +199,64 @@ class _ResultPageState extends State<ResultPage> {
             child: SingleChildScrollView(
               child: SizedBox(
                 width: double.infinity,
-                child: AnimatedTextKit(
-                  totalRepeatCount: 1,
-                  animatedTexts: [
-                    TypewriterAnimatedText(
-                      state.outputString,
-                      speed: Duration(
-                        milliseconds: 10,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  state.outputString,
                 ),
               ),
             ),
           );
   }
 
-  GestureDetector saveOfflineButton(ResultCubit cubit, Trip trip) {
+  GestureDetector saveOfflineButton(ResultCubit cubit, bool readOnly, Trip trip) {
     return GestureDetector(
-      onTap: () async {
-        final response = await cubit.saveTrip(trip);
+      onTap: readOnly
+          ? null
+          : () async {
+              final response = await cubit.saveTrip(trip);
 
-        if (response.status) {
-          Utils.showSnackBar(context, "Trip Saved!");
-        } else {
-          Utils.showSnackBar(context, "Error Occured! : ${response.data}");
-        }
-      },
+              if (response.status && mounted) {
+                Utils.showSnackBar(context, "Trip Saved!");
+              } else {
+                Utils.showSnackBar(context, "Error Occured! : ${response.data}");
+              }
+            },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.download_for_offline),
+          Icon(
+            Icons.download_for_offline,
+            color: readOnly ? Colors.grey : Colors.black,
+          ),
           SizedBox(width: 10),
           Text(
             "Save Offline",
-            style: TextStyle(fontSize: 18),
+            style: TextStyle(
+              fontSize: 18,
+              color: readOnly ? Colors.grey : Colors.black,
+            ),
           ),
         ],
       ),
     );
   }
 
-  GestureDetector followUpButton(ResultState state, Trip trip, String prompt) {
+  GestureDetector followUpButton(ResultState state, String prompt) {
     return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => RefinePage(prompt: prompt, trip: trip),
-          ),
-        );
-      },
+      onTap: state.readOnly || state is ResultLoading
+          ? null
+          : () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => RefinePage(prompt: prompt, trip: state.trip!),
+                ),
+              );
+            },
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: state is ResultLoading
+          color: state is ResultLoading || state.readOnly
               ? CustomTheme.primaryDisabled
               : CustomTheme.primary,
         ),

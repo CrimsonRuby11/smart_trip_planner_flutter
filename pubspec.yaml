@@ -46,6 +46,8 @@ dependencies:
   flutter_dotenv: ^6.0.0
   animated_text_kit: ^4.2.3
   url_launcher: ^6.3.2
+  shared_preferences: ^2.5.3
+  jumping_dot: ^0.0.7
 
 dev_dependencies:
   flutter_test:

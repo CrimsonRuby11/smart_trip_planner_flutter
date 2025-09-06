@@ -21,15 +21,17 @@ class AuthCubit extends Cubit<AuthState> {
   AuthRepo authRepo = AuthRepo();
 
   initAuth() async {
-    emit(AuthLoading());
+    // emit(AuthLoading());
 
-    final fireUser = await authRepo.getCurrUser();
+    emit(Unauthenticated());
 
-    if (fireUser.status) {
-      emit(Authenticated());
-    } else {
-      emit(Unauthenticated());
-    }
+    // final fireUser = await authRepo.getCurrUser();
+
+    // if (fireUser.status) {
+    //   emit(Authenticated());
+    // } else {
+    //   emit(Unauthenticated());
+    // }
   }
 
   login(String email, String pass) async {

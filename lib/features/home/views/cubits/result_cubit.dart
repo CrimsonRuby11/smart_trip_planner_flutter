@@ -6,10 +6,12 @@ import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
 class ResultState {
   final Trip? trip;
   final String outputString;
+  final bool readOnly;
 
   ResultState({
     this.trip,
     this.outputString = "",
+    this.readOnly = false,
   });
 }
 
@@ -18,6 +20,7 @@ class ResultLoading extends ResultState {}
 class ResultLoaded extends ResultState {
   ResultLoaded({
     required super.trip,
+    super.readOnly = false,
     super.outputString = "",
   });
 }
@@ -56,7 +59,13 @@ class ResultCubit extends Cubit<ResultState> {
               "  - ${currTrip.days[i].items[j].time} : ${currTrip.days[i].items[j].activity}\n";
         }
       }
-      emit(ResultLoaded(trip: trip, outputString: resultString));
+      emit(
+        ResultLoaded(
+          trip: trip,
+          outputString: resultString,
+          readOnly: true,
+        ),
+      );
       return;
     }
 

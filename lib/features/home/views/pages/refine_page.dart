@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jumping_dot/jumping_dot.dart';
 import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
@@ -71,7 +72,7 @@ class _RefinePageState extends State<RefinePage> {
               profileIcon(40),
             ],
             title: Text(
-              state.tripHistory[0].title,
+              state.tripHistory[0]!.title,
             ),
           ),
           body: SafeArea(
@@ -128,6 +129,56 @@ class _RefinePageState extends State<RefinePage> {
                                     Text(
                                       state.chatStrings[index],
                                     ),
+
+                                    const SizedBox(height: 10),
+
+                                    index % 2 == 0
+                                        ? GestureDetector(
+                                            onTap: () async {
+                                              final response = await context
+                                                  .read<RefineCubit>()
+                                                  .saveTrip(
+                                                    state.tripHistory[index]!,
+                                                  );
+
+                                              if (!context.mounted) return;
+                                              if (response.status) {
+                                                Utils.showSnackBar(
+                                                  context,
+                                                  "Trip Saved!",
+                                                );
+                                              } else {
+                                                Utils.showSnackBar(
+                                                  context,
+                                                  "Error Occured! : ${response.data}",
+                                                );
+                                              }
+                                            },
+                                            child: SizedBox(
+                                              height: 50,
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.end,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.download,
+                                                        color: Colors.grey,
+                                                      ),
+                                                      const SizedBox(width: 5),
+                                                      Text(
+                                                        "Save offline",
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          )
+                                        : Container(),
                                   ],
                                 ),
                               );
@@ -169,15 +220,31 @@ class _RefinePageState extends State<RefinePage> {
                                       SizedBox(height: 10),
 
                                       Center(
-                                        child: Text(
-                                          state is RefineLoading
-                                              ? "Thinking..."
-                                              : "An Error Occured!",
-                                          style: TextStyle(
-                                            color: state is RefineError
-                                                ? Colors.red
-                                                : Colors.black,
-                                          ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              state is RefineLoading
+                                                  ? "Thinking"
+                                                  : "An Error Occured!",
+                                              style: TextStyle(
+                                                color: state is RefineError
+                                                    ? Colors.red
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            state is RefineLoading
+                                                ? JumpingDots(
+                                                    color: Colors.black,
+                                                    numberOfDots: 3,
+                                                    radius: 5,
+                                                    animationDuration: Duration(
+                                                      milliseconds: 200,
+                                                    ),
+                                                  )
+                                                : Container(),
+                                          ],
                                         ),
                                       ),
 

@@ -49,6 +49,9 @@ class Prefs {
   // INSTANCE
   static SharedPreferences? instance;
 
+  static String requestTokens = "request_tokens";
+  static String responseTokens = "response_tokens";
+
   static void setValue(String key, String value) {
     if (instance == null) {
       debugPrint("PREFS INSTANCE IS NULL");

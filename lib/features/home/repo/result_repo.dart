@@ -16,6 +16,20 @@ class ResultResponse {
   });
 }
 
+class StreamResponse {
+  final String textChunk;
+  final int? requestTokens;
+  final int? responseTokens;
+  final bool isFinal;
+
+  StreamResponse({
+    required this.textChunk,
+    this.requestTokens,
+    this.responseTokens,
+    this.isFinal = false,
+  });
+}
+
 class ResultRepo {
   final model = FirebaseAI.googleAI().generativeModel(
     model: 'gemini-2.5-flash',
@@ -104,7 +118,7 @@ set 'status' value to failure if given prompt is not related to generating an it
     }
   }
 
-  Stream<String> searchPromptStream(String prompt) async* {
+  Stream<StreamResponse> searchPromptStream(String prompt) async* {
     debugPrint("STARTING STREAMING QUERY: $prompt");
 
     final text = [
@@ -142,10 +156,24 @@ set 'status' value to failure if given prompt is not related to generating an it
 
     final responseStream = model.generateContentStream(text);
 
+    // The final response contains the usage metadata. We'll capture it here.
+    GenerateContentResponse? finalResponse;
+
     await for (final response in responseStream) {
+      finalResponse = response;
       if (response.text != null) {
-        yield response.text!;
+        yield StreamResponse(textChunk: response.text!);
       }
+    }
+
+    // The last response chunk should have the usage metadata.
+    if (finalResponse?.usageMetadata != null) {
+      yield StreamResponse(
+        textChunk: '', // No more text, just metadata
+        isFinal: true,
+        requestTokens: finalResponse!.usageMetadata!.promptTokenCount,
+        responseTokens: finalResponse.usageMetadata!.candidatesTokenCount,
+      );
     }
   }
 

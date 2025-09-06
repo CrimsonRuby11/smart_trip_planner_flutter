@@ -7,10 +7,14 @@ import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
 class RefineState {
   final List<String> chatStrings;
   final Map<int, Trip> tripHistory;
+  final Map<int, int> requestTokens;
+  final Map<int, int> responseTokens;
 
   RefineState({
     this.chatStrings = const [],
     this.tripHistory = const {},
+    this.requestTokens = const {},
+    this.responseTokens = const {},
   });
 }
 
@@ -25,6 +29,8 @@ class RefineLoaded extends RefineState {
   RefineLoaded({
     super.chatStrings = const [],
     super.tripHistory = const {},
+    super.requestTokens = const {},
+    super.responseTokens = const {},
   });
 }
 
@@ -35,8 +41,10 @@ class RefineError extends RefineState {
   });
 }
 
+class RefineInit extends RefineState {}
+
 class RefineCubit extends Cubit<RefineState> {
-  RefineCubit() : super(RefineLoading());
+  RefineCubit() : super(RefineInit());
 
   final repo = ResultRepo();
 
@@ -45,9 +53,11 @@ class RefineCubit extends Cubit<RefineState> {
 
   Map<int, Trip> chatHistory = {};
   List<String> chatStrings = [];
+  Map<int, int> requestTokens = {};
+  Map<int, int> responseTokens = {};
 
-  initRefine(String prompt, Trip trip) async {
-    emit(RefineLoading());
+  initRefine(String prompt, Trip trip, int requestTokens, int responseTokens) async {
+    emit(RefineInit());
 
     debugPrint("$prompt, $trip");
 
@@ -56,10 +66,19 @@ class RefineCubit extends Cubit<RefineState> {
     this.prompt = prompt;
     tripString = getTripString(trip);
     chatStrings = [tripString];
+    this.requestTokens[0] = requestTokens;
+    this.responseTokens[0] = responseTokens;
 
     debugPrint("$chatStrings");
 
-    emit(RefineLoaded(chatStrings: chatStrings, tripHistory: chatHistory));
+    emit(
+      RefineLoaded(
+        chatStrings: chatStrings,
+        tripHistory: chatHistory,
+        requestTokens: this.requestTokens,
+        responseTokens: this.responseTokens,
+      ),
+    );
   }
 
   String getTripString(Trip trip) {
@@ -72,6 +91,8 @@ class RefineCubit extends Cubit<RefineState> {
         resultString +=
             "  - ${trip.days[i].items[j].time} : ${trip.days[i].items[j].activity}\n";
       }
+
+      resultString += "\n";
     }
 
     return resultString;
@@ -89,8 +110,17 @@ class RefineCubit extends Cubit<RefineState> {
       if (response.status) {
         Trip t = Trip.fromJson(response.data);
         chatHistory[chatStrings.length] = t;
+        requestTokens[chatStrings.length] = response.requestTokens;
+        responseTokens[chatStrings.length] = response.responseTokens;
         chatStrings.add(getTripString(t));
-        emit(RefineLoaded(chatStrings: chatStrings, tripHistory: chatHistory));
+        emit(
+          RefineLoaded(
+            chatStrings: chatStrings,
+            tripHistory: chatHistory,
+            requestTokens: requestTokens,
+            responseTokens: responseTokens,
+          ),
+        );
       } else {
         emit(RefineError(chatStrings: chatStrings, tripHistory: chatHistory));
       }

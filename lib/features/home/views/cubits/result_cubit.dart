@@ -1,17 +1,24 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_trip_planner_flutter/controllers/hive_controller.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
 import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
+import 'package:term_glyph/term_glyph.dart' as glyph;
 
 class ResultState {
   final Trip? trip;
   final String outputString;
   final bool readOnly;
+  final int requestTokens;
+  final int responseTokens;
 
   ResultState({
     this.trip,
     this.outputString = "",
     this.readOnly = false,
+    this.requestTokens = 0,
+    this.responseTokens = 0,
   });
 }
 
@@ -20,6 +27,15 @@ class ResultLoading extends ResultState {}
 class ResultLoaded extends ResultState {
   ResultLoaded({
     required super.trip,
+    super.readOnly = false,
+    super.outputString = "",
+    required super.requestTokens,
+    required super.responseTokens,
+  });
+}
+
+class ResultStreaming extends ResultState {
+  ResultStreaming({
     super.readOnly = false,
     super.outputString = "",
   });
@@ -43,53 +59,89 @@ class ResultCubit extends Cubit<ResultState> {
   final resultRepo = ResultRepo();
 
   String resultString = "";
+  int requestTokens = 0;
+  int responseTokens = 0;
+
+  String getTripString(Trip trip) {
+    String resultString = "";
+
+    for (int i = 0; i < trip.days.length; i++) {
+      resultString += "Day ${i + 1}: ${trip.days[i].summary}\n";
+
+      for (int j = 0; j < trip.days[i].items.length; j++) {
+        resultString +=
+            "  - ${trip.days[i].items[j].time} : ${trip.days[i].items[j].activity}\n";
+      }
+
+      resultString += "\n";
+    }
+
+    return resultString;
+  }
 
   initResult(String prompt, Trip? trip) async {
     emit(ResultLoading());
 
     if (trip != null) {
-      Trip currTrip = trip;
-      resultString = "";
+      resultString = getTripString(trip);
 
-      for (int i = 0; i < currTrip.days.length; i++) {
-        resultString += "Day ${i + 1}: ${currTrip.days[i].summary}\n";
-
-        for (int j = 0; j < currTrip.days[i].items.length; j++) {
-          resultString +=
-              "  - ${currTrip.days[i].items[j].time} : ${currTrip.days[i].items[j].activity}\n";
-        }
-      }
       emit(
         ResultLoaded(
           trip: trip,
           outputString: resultString,
           readOnly: true,
+          requestTokens: requestTokens,
+          responseTokens: responseTokens,
         ),
       );
       return;
     }
 
-    final response = await resultRepo.searchPrompt(prompt);
+    try {
+      final responseStream = resultRepo.searchPromptStream(prompt);
+      String fullResponse = "";
 
-    if (!response.status) {
-      emit(ResultError());
-      return;
-    }
-
-    Trip currTrip = Trip.fromJson(response.data);
-
-    resultString = "";
-
-    for (int i = 0; i < currTrip.days.length; i++) {
-      resultString += "Day ${i + 1}: ${currTrip.days[i].summary}\n";
-
-      for (int j = 0; j < currTrip.days[i].items.length; j++) {
-        resultString +=
-            "  - ${currTrip.days[i].items[j].time} : ${currTrip.days[i].items[j].activity}\n";
+      await for (final streamedResponse in responseStream) {
+        if (streamedResponse.isFinal) {
+          debugPrint("Request Tokens: ${streamedResponse.requestTokens}");
+          debugPrint("Response Tokens: ${streamedResponse.responseTokens}");
+          requestTokens = streamedResponse.requestTokens!;
+          responseTokens = streamedResponse.responseTokens!;
+        }
+        resultString += streamedResponse.textChunk;
+        fullResponse += streamedResponse.textChunk;
+        emit(ResultStreaming(outputString: resultString));
       }
-    }
 
-    emit(ResultLoaded(trip: currTrip, outputString: resultString));
+      // JSON parsing logic from your original searchPrompt
+      final rawJson = fullResponse;
+      Map<String, dynamic> parsedJson = {};
+      final startIndex = rawJson.indexOf('{');
+      final endIndex = rawJson.lastIndexOf('}') + 1;
+
+      if (startIndex != -1 && endIndex != 0 && endIndex > startIndex) {
+        parsedJson = jsonDecode(rawJson.substring(startIndex, endIndex));
+
+        if (parsedJson['status'] == 'failure') {
+          emit(ResultError());
+          return;
+        }
+
+        Trip currTrip = Trip.fromJson(parsedJson);
+        emit(
+          ResultLoaded(
+            trip: currTrip,
+            outputString: getTripString(currTrip),
+            requestTokens: requestTokens,
+            responseTokens: responseTokens,
+          ),
+        );
+      } else {
+        emit(ResultError());
+      }
+    } catch (e) {
+      emit(ResultError());
+    }
   }
 
   Future<ResultResponse> saveTrip(Trip trip) async {

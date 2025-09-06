@@ -7,6 +7,7 @@ import 'package:smart_trip_planner_flutter/config/utils.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/cubits/result_cubit.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/pages/refine_page.dart';
+import 'package:smart_trip_planner_flutter/features/profile/views/cubits/profile_cubit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ResultPage extends StatefulWidget {
@@ -29,37 +30,40 @@ class _ResultPageState extends State<ResultPage> {
     return BlocProvider(
       create: (context) => ResultCubit()..initResult(widget.prompt, widget.trip),
       child: BlocConsumer<ResultCubit, ResultState>(
-        listener: (context, state) {},
-        builder: (context, state) => SafeArea(
-          child: Scaffold(
-            appBar: AppBar(
-              systemOverlayStyle: const SystemUiOverlayStyle(
-                statusBarBrightness: Brightness.light,
-                statusBarColor: Colors.transparent,
-              ),
-              title: Text(
-                "Home",
-                style: TextStyle(fontSize: 18),
-              ),
-              actionsPadding: EdgeInsets.only(right: 20),
-              actions: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: CustomTheme.primary,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "P",
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+        listener: (context, state) {
+          if (state is ResultLoaded) {
+            context.read<ProfileCubit>().updateValues(
+              state.requestTokens,
+              state.responseTokens,
+            );
+          }
+        },
+        builder: (context, state) => Scaffold(
+          appBar: AppBar(
+            title: Text(
+              "Home",
+              style: TextStyle(fontSize: 18),
+            ),
+            actionsPadding: EdgeInsets.only(right: 20),
+            actions: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: CustomTheme.primary,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Center(
+                  child: Text(
+                    "P",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ),
-              ],
-            ),
-            body: Padding(
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: Padding(
               padding: const EdgeInsets.all(20),
               child: Center(
                 child: Column(
@@ -85,38 +89,74 @@ class _ResultPageState extends State<ResultPage> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Expanded(child: resultContent(state)),
-                            state is ResultLoaded
-                                ? Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 20,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 15,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromARGB(98, 158, 158, 158),
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    child: Row(
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 10),
+                              state is ResultLoaded && widget.trip == null
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        mapsButton(state, context),
-                                        Expanded(
-                                          child: Text(
-                                            " : ${state.trip!.title}",
-                                            overflow: TextOverflow.ellipsis,
+                                        Text(
+                                          "Request tokens: ${state.requestTokens}",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          "Response tokens: ${state.responseTokens}",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
                                           ),
                                         ),
                                       ],
-                                    ),
-                                  )
-                                : Container(),
-                          ],
+                                    )
+                                  : Container(),
+                              Expanded(child: resultContent(state)),
+                              state is ResultLoaded
+                                  ? Column(
+                                      children: [
+                                        Container(
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 5,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 15,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(
+                                              98,
+                                              158,
+                                              158,
+                                              158,
+                                            ),
+                                            borderRadius: BorderRadius.circular(18),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              mapsButton(state, context),
+                                              Expanded(
+                                                child: Text(
+                                                  " : ${state.trip == null ? "" : state.trip!.title}",
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Container(),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -195,12 +235,15 @@ class _ResultPageState extends State<ResultPage> {
             ),
           )
         : Padding(
-            padding: const EdgeInsets.all(30),
+            padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(
               child: SizedBox(
                 width: double.infinity,
                 child: Text(
                   state.outputString,
+                  style: TextStyle(
+                    color: state is ResultStreaming ? Colors.grey : Colors.black,
+                  ),
                 ),
               ),
             ),
@@ -217,6 +260,7 @@ class _ResultPageState extends State<ResultPage> {
               if (response.status && mounted) {
                 Utils.showSnackBar(context, "Trip Saved!");
               } else {
+                if (!mounted) return;
                 Utils.showSnackBar(context, "Error Occured! : ${response.data}");
               }
             },
@@ -247,7 +291,12 @@ class _ResultPageState extends State<ResultPage> {
           : () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => RefinePage(prompt: prompt, trip: state.trip!),
+                  builder: (context) => RefinePage(
+                    prompt: prompt,
+                    trip: state.trip!,
+                    requestTokens: state.requestTokens,
+                    responseTokens: state.responseTokens,
+                  ),
                 ),
               );
             },

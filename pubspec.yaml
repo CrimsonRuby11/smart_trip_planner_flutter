@@ -48,6 +48,7 @@ dependencies:
   url_launcher: ^6.3.2
   shared_preferences: ^2.5.3
   jumping_dot: ^0.0.7
+  term_glyph: ^1.2.2
 
 dev_dependencies:
   flutter_test:

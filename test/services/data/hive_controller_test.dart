@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:smart_trip_planner_flutter/controllers/hive_controller.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
+import 'package:smart_trip_planner_flutter/services/data/hive_controller.dart';
 
 void main() {
   late Directory tempDir;
@@ -10,7 +10,6 @@ void main() {
   // This setup runs once before all tests in the file.
   setUpAll(() {
     // Use a temporary directory for testing to avoid conflicts.
-    print("Hello there");
     tempDir = Directory.systemTemp.createTempSync();
 
     // The static init() method registers adapters, but we must ensure

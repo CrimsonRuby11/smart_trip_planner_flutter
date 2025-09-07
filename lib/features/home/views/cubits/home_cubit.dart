@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:smart_trip_planner_flutter/controllers/hive_controller.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
+import 'package:smart_trip_planner_flutter/services/data/hive_controller.dart';
 
 class HomeState {
   final List<Trip> history;

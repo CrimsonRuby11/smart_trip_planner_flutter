@@ -3,11 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
-import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/cubits/result_cubit.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/pages/refine_page.dart';
 import 'package:smart_trip_planner_flutter/features/profile/views/cubits/profile_cubit.dart';
 import 'package:smart_trip_planner_flutter/features/profile/views/profile_page.dart';
+import 'package:smart_trip_planner_flutter/services/data/firebase_ai_repo.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ResultPage extends StatefulWidget {

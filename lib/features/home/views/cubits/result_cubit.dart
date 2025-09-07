@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:smart_trip_planner_flutter/controllers/hive_controller.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
 import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
+import 'package:smart_trip_planner_flutter/services/data/firebase_ai_repo.dart';
+import 'package:smart_trip_planner_flutter/services/data/hive_controller.dart';
 
 class ResultState {
   final Trip? trip;

@@ -6,10 +6,6 @@ class HiveController {
   static late Box<Trip> tripsBox;
   static List<Trip> trips = <Trip>[];
 
-  /// Initializes Hive.
-  ///
-  /// For the main app, call `HiveController.init()`.
-  /// For tests, provide a `path` to a temporary directory.
   static Future<void> init({String? path}) async {
     if (path == null) {
       await Hive.initFlutter();

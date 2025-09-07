@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_trip_planner_flutter/controllers/hive_controller.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
 import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
-import 'package:term_glyph/term_glyph.dart' as glyph;
 
 class ResultState {
   final Trip? trip;
@@ -41,15 +41,10 @@ class ResultStreaming extends ResultState {
   });
 }
 
-class ResultError extends ResultState {}
-
-class ResultResponse {
-  final bool status;
-  final dynamic data;
-
-  ResultResponse({
-    required this.status,
-    this.data,
+class ResultError extends ResultState {
+  final String message;
+  ResultError({
+    this.message = "An unknown error occurred.",
   });
 }
 
@@ -140,16 +135,24 @@ class ResultCubit extends Cubit<ResultState> {
         emit(ResultError());
       }
     } catch (e) {
-      emit(ResultError());
+      String errorMessage = "An error occurred during generation.";
+      if (e is SocketException) {
+        errorMessage = "Network error. Please check your connection.";
+      } else if (e is FormatException) {
+        errorMessage = "There was an issue with the server's response format.";
+      } else {
+        errorMessage = "An unexpected error occurred";
+      }
+      emit(ResultError(message: errorMessage));
     }
   }
 
   Future<ResultResponse> saveTrip(Trip trip) async {
     try {
       await HiveController.addData(trip);
-      return ResultResponse(status: true);
+      return ResultResponse(status: ResultStatus.success);
     } catch (e) {
-      return ResultResponse(status: false, data: e.toString());
+      return ResultResponse(status: ResultStatus.failure, data: e.toString());
     }
   }
 }

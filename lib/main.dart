@@ -7,6 +7,8 @@ import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
 import 'package:smart_trip_planner_flutter/controllers/hive_controller.dart';
 import 'package:smart_trip_planner_flutter/features/auth/views/cubits/auth_cubit.dart';
+import 'package:smart_trip_planner_flutter/features/auth/views/cubits/connectivity_cubit.dart';
+import 'package:smart_trip_planner_flutter/features/auth/views/pages/offline_page.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/pages/home_page.dart';
 import 'package:smart_trip_planner_flutter/features/profile/views/cubits/profile_cubit.dart';
 import 'package:smart_trip_planner_flutter/firebase_options.dart';
@@ -34,6 +36,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (context) => ConnectivityCubit(), lazy: false),
         BlocProvider(create: (context) => AuthCubit()),
         BlocProvider(create: (context) => ProfileCubit()..init(), lazy: false),
       ],
@@ -47,7 +50,16 @@ class MyApp extends StatelessWidget {
             elevation: 0,
           ),
         ),
-        home: const MainApp(title: 'Itinera AI'),
+        home: BlocBuilder<ConnectivityCubit, ConnectivityState>(
+          builder: (context, state) {
+            if (state is ConnectivityOnline) {
+              return const MainApp(title: 'Itinera AI');
+            } else if (state is ConnectivityOffline) {
+              return const OfflinePage();
+            }
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          },
+        ),
       ),
     );
   }

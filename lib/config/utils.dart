@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Config {
@@ -27,22 +24,6 @@ class ApiResponse {
     required this.status,
     this.data,
   });
-}
-
-class ApiDriver {
-  static Future<ApiResponse> get(Uri url) async {
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        return ApiResponse(status: true, data: jsonDecode(response.body));
-      } else {
-        return ApiResponse(status: false, data: jsonDecode(response.body));
-      }
-    } catch (e) {
-      return ApiResponse(status: false);
-    }
-  }
 }
 
 class Prefs {

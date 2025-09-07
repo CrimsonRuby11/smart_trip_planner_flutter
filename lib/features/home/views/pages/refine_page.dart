@@ -4,7 +4,10 @@ import 'package:jumping_dot/jumping_dot.dart';
 import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
+import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/cubits/refine_cubit.dart';
+import 'package:smart_trip_planner_flutter/features/profile/views/cubits/profile_cubit.dart';
+import 'package:smart_trip_planner_flutter/features/profile/views/profile_page.dart';
 
 class RefinePage extends StatefulWidget {
   final Trip trip;
@@ -25,18 +28,27 @@ class RefinePage extends StatefulWidget {
 }
 
 class _RefinePageState extends State<RefinePage> {
-  Container profileIcon(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: CustomTheme.primary,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Center(
-        child: Text(
-          "P",
-          style: TextStyle(color: Colors.white, fontSize: 16),
+  Widget profileIcon(double size) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProfilePage(),
+          ),
+        );
+      },
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: CustomTheme.primary,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Center(
+          child: Text(
+            "P",
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
         ),
       ),
     );
@@ -74,7 +86,14 @@ class _RefinePageState extends State<RefinePage> {
           widget.responseTokens,
         ),
       child: BlocConsumer<RefineCubit, RefineState>(
-        listener: (context, state) => {},
+        listener: (context, state) {
+          if (state is RefineLoaded && state.chatStrings.length > 1) {
+            context.read<ProfileCubit>().updateValues(
+              state.requestTokens[state.chatStrings.length - 1] ?? 0,
+              state.responseTokens[state.chatStrings.length - 1] ?? 0,
+            );
+          }
+        },
         builder: (context, state) => Scaffold(
           appBar: AppBar(
             actionsPadding: EdgeInsets.only(right: 20),
@@ -193,7 +212,8 @@ class _RefinePageState extends State<RefinePage> {
                                                                 );
 
                                                             if (!context.mounted) return;
-                                                            if (response.status) {
+                                                            if (response.status ==
+                                                                ResultStatus.success) {
                                                               Utils.showSnackBar(
                                                                 context,
                                                                 "Trip Saved!",
@@ -276,7 +296,7 @@ class _RefinePageState extends State<RefinePage> {
                                                   Text(
                                                     state is RefineLoading
                                                         ? "Thinking"
-                                                        : "An Error Occured!",
+                                                        : (state as RefineError).message,
                                                     style: TextStyle(
                                                       color: state is RefineError
                                                           ? Colors.red
@@ -315,6 +335,7 @@ class _RefinePageState extends State<RefinePage> {
                             children: [
                               Expanded(
                                 child: TextField(
+                                  enabled: state is RefineError ? false : true,
                                   controller: controller,
                                   textAlignVertical: TextAlignVertical.center,
                                   onTapOutside: (t) =>

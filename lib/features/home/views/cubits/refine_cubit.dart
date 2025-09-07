@@ -35,7 +35,9 @@ class RefineLoaded extends RefineState {
 }
 
 class RefineError extends RefineState {
+  final String message;
   RefineError({
+    this.message = "An unknown error occurred.",
     super.chatStrings = const [],
     super.tripHistory = const {},
   });
@@ -107,7 +109,7 @@ class RefineCubit extends Cubit<RefineState> {
 
       // start prompt with ai
       final response = await repo.refinePrompt(lastTripString, prompt);
-      if (response.status) {
+      if (response.status == ResultStatus.success) {
         Trip t = Trip.fromJson(response.data);
         chatHistory[chatStrings.length] = t;
         requestTokens[chatStrings.length] = response.requestTokens;
@@ -122,19 +124,48 @@ class RefineCubit extends Cubit<RefineState> {
           ),
         );
       } else {
-        emit(RefineError(chatStrings: chatStrings, tripHistory: chatHistory));
+        String errorMessage = "An error occurred.";
+        switch (response.status) {
+          case ResultStatus.networkError:
+            errorMessage = "Network error. Please check your connection.";
+            break;
+          case ResultStatus.unauthorized:
+            errorMessage = "Authentication failed. Please log in again.";
+            break;
+          case ResultStatus.rateLimitExceeded:
+            errorMessage = "You've made too many requests. Please try again later.";
+            break;
+          case ResultStatus.jsonError:
+            errorMessage = "There was an issue with the server's response.";
+            break;
+          default:
+            errorMessage = "Failed to process prompt";
+        }
+        emit(
+          RefineError(
+            chatStrings: chatStrings,
+            tripHistory: chatHistory,
+            message: errorMessage,
+          ),
+        );
       }
     } catch (e) {
-      emit(RefineError(chatStrings: chatStrings, tripHistory: chatHistory));
+      emit(
+        RefineError(
+          chatStrings: chatStrings,
+          tripHistory: chatHistory,
+          message: e.toString(),
+        ),
+      );
     }
   }
 
   Future<ResultResponse> saveTrip(Trip trip) async {
     try {
       await HiveController.addData(trip);
-      return ResultResponse(status: true);
+      return ResultResponse(status: ResultStatus.success);
     } catch (e) {
-      return ResultResponse(status: false, data: e.toString());
+      return ResultResponse(status: ResultStatus.failure, data: e.toString());
     }
   }
 }

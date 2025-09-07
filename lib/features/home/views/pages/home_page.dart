@@ -118,7 +118,7 @@ class _HomePageState extends State<HomePage> {
                                           height: 10,
                                         ),
                                         SizedBox(width: 10),
-                                        Text("${state.history[index].title}"),
+                                        Text(state.history[index].title),
                                       ],
                                     ),
                                   ),

@@ -1,16 +1,26 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/material.dart';
 
+enum ResultStatus {
+  success,
+  failure,
+  unauthorized,
+  rateLimitExceeded,
+  networkError,
+  jsonError,
+}
+
 class ResultResponse {
-  final bool status;
+  final ResultStatus status;
   final dynamic data;
   final int requestTokens;
   final int responseTokens;
 
   ResultResponse({
     required this.status,
-    this.requestTokens = 0,
+    this.requestTokens = 0, //
     this.responseTokens = 0,
     this.data,
   });
@@ -31,11 +41,9 @@ class StreamResponse {
 }
 
 class ResultRepo {
-  final model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-2.5-flash',
-    tools: [
-      Tool.googleSearch(),
-    ],
+  final _model = FirebaseAI.googleAI().generativeModel(
+    model: 'gemini-1.5-flash',
+    tools: [Tool.googleSearch()],
   );
 
   Future<ResultResponse> refinePrompt(String tripString, String prompt) async {
@@ -45,7 +53,7 @@ class ResultRepo {
       final text = [
         Content.text('''
 Given the trip details, refine the trip according to the prompt and give me an itinerary, set status to 'failure' if given prompt text is not relevant to refining a trip itinerary, in the following json format:
-{
+{ 
   "status": "success",
   "title": "Kyoto 5-Day Solo Trip",
   "startDate": "2025-04-10",
@@ -86,7 +94,7 @@ set 'status' value to failure if given prompt is not related to generating an it
 '''),
       ];
 
-      final response = await model.generateContent(text);
+      final response = await _model.generateContent(text);
       debugPrint("PROMPT RESPONSE: ${response.text}");
 
       final rawJson = response.text;
@@ -99,22 +107,32 @@ set 'status' value to failure if given prompt is not related to generating an it
           parsedJson = jsonDecode(rawJson.substring(startIndex, endIndex));
 
           if (parsedJson['status'] == 'failure') {
-            return ResultResponse(
-              status: false,
-              data: parsedJson,
-            );
+            return ResultResponse(status: ResultStatus.failure, data: parsedJson);
           }
           return ResultResponse(
-            status: true,
+            status: ResultStatus.success,
             data: parsedJson,
             requestTokens: response.usageMetadata!.promptTokenCount!,
             responseTokens: response.usageMetadata!.candidatesTokenCount!,
           );
         }
       }
-      return ResultResponse(status: false);
+      return ResultResponse(
+        status: ResultStatus.jsonError,
+        data: "Could not parse JSON from response.",
+      );
+    } on SocketException {
+      return ResultResponse(
+        status: ResultStatus.networkError,
+        data: "No Internet connection",
+      );
+    } on FormatException {
+      return ResultResponse(
+        status: ResultStatus.jsonError,
+        data: "Invalid JSON format received.",
+      );
     } catch (e) {
-      rethrow;
+      return ResultResponse(status: ResultStatus.failure, data: e.toString());
     }
   }
 
@@ -154,7 +172,7 @@ set 'status' value to failure if given prompt is not related to generating an it
 '''),
     ];
 
-    final responseStream = model.generateContentStream(text);
+    final responseStream = _model.generateContentStream(text);
 
     // The final response contains the usage metadata. We'll capture it here.
     GenerateContentResponse? finalResponse;
@@ -177,6 +195,7 @@ set 'status' value to failure if given prompt is not related to generating an it
     }
   }
 
+  // This is an example of how you would handle it for a non-streaming call.
   Future<ResultResponse> searchPrompt(String prompt) async {
     try {
       debugPrint("STARTING QUERY: $prompt");
@@ -224,7 +243,7 @@ set 'status' value to failure if given prompt is not related to generating an it
 '''),
       ];
 
-      final response = await model.generateContent(text);
+      final response = await _model.generateContent(text);
       debugPrint("PROMPT RESPONSE: ${response.text}");
 
       final rawJson = response.text;
@@ -238,21 +257,34 @@ set 'status' value to failure if given prompt is not related to generating an it
 
           if (parsedJson['status'] == 'failure') {
             return ResultResponse(
-              status: false,
+              status: ResultStatus.failure,
               data: parsedJson,
             );
           }
           return ResultResponse(
-            status: true,
+            status: ResultStatus.success,
             data: parsedJson,
             requestTokens: response.usageMetadata!.promptTokenCount!,
             responseTokens: response.usageMetadata!.candidatesTokenCount!,
           );
         }
       }
-      return ResultResponse(status: false);
+      return ResultResponse(
+        status: ResultStatus.jsonError,
+        data: "Could not parse JSON from response.",
+      );
+    } on SocketException {
+      return ResultResponse(
+        status: ResultStatus.networkError,
+        data: "No Internet connection",
+      );
+    } on FormatException {
+      return ResultResponse(
+        status: ResultStatus.jsonError,
+        data: "Invalid JSON format received.",
+      );
     } catch (e) {
-      rethrow;
+      return ResultResponse(status: ResultStatus.failure, data: e.toString());
     }
   }
 }

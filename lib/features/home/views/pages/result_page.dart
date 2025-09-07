@@ -1,13 +1,13 @@
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
 import 'package:smart_trip_planner_flutter/features/home/models/trip.dart';
+import 'package:smart_trip_planner_flutter/features/home/repo/result_repo.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/cubits/result_cubit.dart';
 import 'package:smart_trip_planner_flutter/features/home/views/pages/refine_page.dart';
 import 'package:smart_trip_planner_flutter/features/profile/views/cubits/profile_cubit.dart';
+import 'package:smart_trip_planner_flutter/features/profile/views/profile_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ResultPage extends StatefulWidget {
@@ -46,17 +46,26 @@ class _ResultPageState extends State<ResultPage> {
             ),
             actionsPadding: EdgeInsets.only(right: 20),
             actions: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: CustomTheme.primary,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Center(
-                  child: Text(
-                    "P",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ProfilePage(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: CustomTheme.primary,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "P",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ),
                 ),
               ),
@@ -257,7 +266,7 @@ class _ResultPageState extends State<ResultPage> {
           : () async {
               final response = await cubit.saveTrip(trip);
 
-              if (response.status && mounted) {
+              if (response.status == ResultStatus.success && mounted) {
                 Utils.showSnackBar(context, "Trip Saved!");
               } else {
                 if (!mounted) return;
@@ -334,7 +343,11 @@ class _ResultPageState extends State<ResultPage> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Text(
-        state is ResultLoading ? "Creating Itinerary..." : "Itinerary Created!",
+        state is ResultLoading
+            ? "Creating Itinerary..."
+            : state is ResultError
+            ? state.message
+            : "Itinerary Created!",
         style: TextStyle(
           fontSize: 30,
           fontWeight: FontWeight.bold,

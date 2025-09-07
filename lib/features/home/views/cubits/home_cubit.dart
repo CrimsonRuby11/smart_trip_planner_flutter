@@ -36,7 +36,7 @@ class HomeCubit extends Cubit<HomeState> {
   initHome() async {
     emit(HomeLoading());
 
-    HiveController.init();
+    await HiveController.init();
     trips = HiveController.trips;
 
     emit(HomeLoaded(history: trips));

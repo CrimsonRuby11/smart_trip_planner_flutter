@@ -6,8 +6,16 @@ class HiveController {
   static late Box<Trip> tripsBox;
   static List<Trip> trips = <Trip>[];
 
-  static init() async {
-    await Hive.initFlutter();
+  /// Initializes Hive.
+  ///
+  /// For the main app, call `HiveController.init()`.
+  /// For tests, provide a `path` to a temporary directory.
+  static Future<void> init({String? path}) async {
+    if (path == null) {
+      await Hive.initFlutter();
+    } else {
+      Hive.init(path);
+    }
     if (!Hive.isAdapterRegistered(3)) {
       Hive.registerAdapter(ItemAdapter());
     }
@@ -30,12 +38,22 @@ class HiveController {
   }
 
   static addData(Trip trip) async {
-    await tripsBox.add(trip);
-    loadData();
+    try {
+      await tripsBox.add(trip);
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {
+      loadData();
+    }
   }
 
   static deleteData(int index) async {
-    await tripsBox.delete(index);
-    loadData();
+    try {
+      await tripsBox.delete(index);
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {
+      loadData();
+    }
   }
 }

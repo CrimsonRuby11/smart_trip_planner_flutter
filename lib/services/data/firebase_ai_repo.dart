@@ -45,7 +45,7 @@ class StreamResponse {
 /// Concrete implementation of [GenAiRepo] using the Firebase AI SDK (Gemini).
 class FirebaseAiRepo extends GenAiRepo {
   final _model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.5-flash',
     tools: [Tool.googleSearch()],
   );
 

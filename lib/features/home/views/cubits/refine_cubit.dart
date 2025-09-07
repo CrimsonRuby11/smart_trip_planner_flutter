@@ -23,6 +23,8 @@ class RefineLoading extends RefineState {
   RefineLoading({
     super.chatStrings = const [],
     super.tripHistory = const {},
+    super.requestTokens = const {},
+    super.responseTokens = const {},
   });
 }
 
@@ -106,7 +108,14 @@ class RefineCubit extends Cubit<RefineState> {
       // add prompt card
       String lastTripString = chatStrings.last;
       chatStrings.add(prompt);
-      emit(RefineLoading(chatStrings: chatStrings, tripHistory: chatHistory));
+      emit(
+        RefineLoading(
+          chatStrings: chatStrings,
+          tripHistory: chatHistory,
+          requestTokens: requestTokens,
+          responseTokens: responseTokens,
+        ),
+      );
 
       // start prompt with ai
       final response = await repo.refinePrompt(lastTripString, prompt);

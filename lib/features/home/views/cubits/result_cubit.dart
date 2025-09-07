@@ -142,6 +142,7 @@ class ResultCubit extends Cubit<ResultState> {
       } else if (e is FormatException) {
         errorMessage = "There was an issue with the server's response format.";
       } else {
+        debugPrint("$e");
         errorMessage = "An unexpected error occurred";
       }
       emit(ResultError(message: errorMessage));

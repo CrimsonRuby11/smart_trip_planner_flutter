@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_trip_planner_flutter/config/custom_theme.dart';
 import 'package:smart_trip_planner_flutter/config/utils.dart';
@@ -20,10 +19,6 @@ void main() async {
   );
 
   Prefs.instance = await SharedPreferences.getInstance();
-
-  await dotenv.load(fileName: ".env");
-  Config.serpKey = dotenv.env['SERP_KEY']!;
-
   await HiveController.init();
 
   runApp(const MyApp());

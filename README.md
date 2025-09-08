@@ -63,8 +63,8 @@ The following table shows the average token usage for typical interactions with 
 | Action             | Prompt Tokens (Input) | Completion Tokens (Output) | Notes                                                                                                    |
 | :----------------- | :-------------------- | :------------------------- | :------------------------------------------------------------------------------------------------------- |
 | **Initial Search** | ~250                  | ~800                       | Generating a 3-day itinerary for a city.                                                                 |
-| **Refine Request** | ~400                  | ~1000                      | Refining the previous itinerary (e.g., "add more restaurants"). The prompt includes the previous output. |
-| **Invalid Prompt** | ~430                  | ~20                        | Responding to an irrelevant prompt (e.g., "what is the capital of France?").                             |
+| **Refine Request** | ~700                  | ~800                      | Refining the previous itinerary (e.g., "add more restaurants"). The prompt includes the previous output. |
+| **Invalid Prompt** | ~400                  | ~50                        | Responding to an irrelevant prompt (e.g., "what is the capital of France?").                             |
 
 ## Improvements to be made
 - Result from prompt is displayed as a single text block. Future goals include modularizing the output to include Google maps link to each item in a day, along with image generations, and ability to select block of text from the result for refining prompt.

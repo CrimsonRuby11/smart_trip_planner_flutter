@@ -56,7 +56,7 @@ class FirebaseAiRepo extends GenAiRepo {
 
       final text = [
         Content.text('''
-Given the trip details, refine the trip according to the prompt and give me an itinerary, set status to 'failure' if given prompt text is not relevant to refining a trip itinerary, in the following json format:
+Given the trip details, refine the trip according to the prompt and give me an itinerary, set status to 'failure' if given prompt text is not relevant to refining a trip itinerary, and add in the following json format:
 { 
   "status": "success",
   "title": "Kyoto 5-Day Solo Trip",
@@ -146,7 +146,7 @@ set 'status' value to failure if given prompt is not related to generating an it
 
     final text = [
       Content.text('''
-For this prompt, give me an itinerary for a trip in the following json format:
+For this prompt, give me an itinerary for a trip, set status to 'failure' if given prompt text is not relevant to refining a trip itinerary, in the following json format:
 {
   "status": "success",
   "title": "Kyoto 5-Day Solo Trip",

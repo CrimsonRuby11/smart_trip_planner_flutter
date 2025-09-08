@@ -15,7 +15,11 @@ class _OfflinePageState extends State<OfflinePage> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ConnectivityCubit, ConnectivityState>(
-      listener: (context, state) => {},
+      listener: (context, state) {
+        if (state is ConnectivityOffline) {
+          context.read<ConnectivityCubit>().checkInitialConnection();
+        }
+      },
       builder: (context, state) => Scaffold(
         body: Center(
           child: Column(

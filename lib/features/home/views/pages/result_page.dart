@@ -243,6 +243,15 @@ class _ResultPageState extends State<ResultPage> {
               ],
             ),
           )
+        : state is ResultError
+        ? Center(
+            child: Text(
+              "Please Try Again!",
+              style: TextStyle(
+                color: Colors.red,
+              ),
+            ),
+          )
         : Padding(
             padding: const EdgeInsets.all(20),
             child: SingleChildScrollView(

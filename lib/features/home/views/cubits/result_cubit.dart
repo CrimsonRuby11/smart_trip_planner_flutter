@@ -46,6 +46,7 @@ class ResultError extends ResultState {
   final String message;
   ResultError({
     this.message = "An unknown error occurred.",
+    super.outputString = "",
   });
 }
 
@@ -119,7 +120,7 @@ class ResultCubit extends Cubit<ResultState> {
         parsedJson = jsonDecode(rawJson.substring(startIndex, endIndex));
 
         if (parsedJson['status'] == 'failure') {
-          emit(ResultError());
+          emit(ResultError(outputString: "Please try again!"));
           return;
         }
 

@@ -37,8 +37,8 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
 
   Future<void> checkInitialConnection() async {
     final result = await _connectivity.checkConnectivity();
-    _updateConnectionStatus(result);
     updateHistory();
+    _updateConnectionStatus(result);
   }
 
   void _updateConnectionStatus(List<ConnectivityResult> result) {
